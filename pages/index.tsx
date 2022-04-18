@@ -1,3 +1,4 @@
+/* eslint-disable  @typescript-eslint/explicit-function-return-type */
 import {
   Box,
   Button,
@@ -19,19 +20,31 @@ import {
 import { PasswordField } from '@components/PasswordField';
 import { useRouter } from 'next/router';
 import { FC, useState } from 'react';
+import { gql, useMutation } from '@apollo/client';
+
+const authMutation = gql`
+  mutation ($input: AuthenticateInput!) {
+    authenticate(input: $input) {
+      token
+    }
+  }
+`;
 
 const Home: FC = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const signIn = (): void => {
-    setLoading(true);
+  const [login] = useMutation(authMutation, {
+    onCompleted: () => {
+      setLoading(true);
 
-    setTimeout(() => {
-      void router.push('/home');
-      setLoading(false);
-    }, 1500);
-  };
+      setTimeout(() => {
+        setLoading(false);
+
+        void router.push('/home');
+      });
+    },
+  });
 
   return (
     <Container maxW="lg" py={{ base: '12', md: '24' }} px={{ base: '0', sm: '8' }}>
@@ -63,33 +76,46 @@ const Home: FC = () => {
           boxShadow={{ base: 'none', sm: useColorModeValue('md', 'md-dark') }}
           borderRadius={{ base: 'none', sm: 'xl' }}
         >
-          <Stack spacing="6">
-            <Stack spacing="5">
-              <FormControl>
-                <FormLabel htmlFor="email">Email</FormLabel>
-                <Input id="email" type="email" required />
-              </FormControl>
-              <PasswordField />
-            </Stack>
-            <HStack justify="space-between">
-              <Checkbox defaultIsChecked>Remember me</Checkbox>
-              <Button variant="link" colorScheme="blue" size="sm">
-                Forgot password?
-              </Button>
-            </HStack>
+          <form
+            onSubmit={(data) => {
+              event?.preventDefault();
+              const info = {
+                input: {
+                  password: data.target[2].value,
+                  emailAddress: data.target[0].value,
+                },
+              };
+              return login({ variables: info });
+            }}
+          >
             <Stack spacing="6">
-              <Button colorScheme="teal" onClick={signIn} disabled={loading}>
-                {loading ? <Spinner size="sm" /> : 'Sign in'}
-              </Button>
-              <HStack>
-                <Divider />
-                <Text fontSize="sm" whiteSpace="nowrap" color="muted">
-                  or continue with
-                </Text>
-                <Divider />
+              <Stack spacing="5">
+                <FormControl>
+                  <FormLabel htmlFor="email">Email</FormLabel>
+                  <Input id="email" type="email" required />
+                </FormControl>
+                <PasswordField />
+              </Stack>
+              <HStack justify="space-between">
+                <Checkbox defaultIsChecked>Remember me</Checkbox>
+                <Button variant="link" colorScheme="blue" size="sm">
+                  Forgot password?
+                </Button>
               </HStack>
+              <Stack spacing="6">
+                <Button type="submit" colorScheme="teal" disabled={loading}>
+                  {loading ? <Spinner size="sm" /> : 'Sign in'}
+                </Button>
+                <HStack>
+                  <Divider />
+                  <Text fontSize="sm" whiteSpace="nowrap" color="muted">
+                    or continue with
+                  </Text>
+                  <Divider />
+                </HStack>
+              </Stack>
             </Stack>
-          </Stack>
+          </form>
         </Box>
       </Stack>
     </Container>

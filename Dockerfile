@@ -3,6 +3,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 RUN apk update
+RUN apk add --no-cache bash
 RUN npm ci
 
 COPY . .
@@ -10,4 +11,5 @@ COPY . .
 RUN npm run build
 EXPOSE 3000
 
-CMD ["npm", "start"]
+COPY start-server /usr/local/bin
+ENTRYPOINT [ "start-server" ]
